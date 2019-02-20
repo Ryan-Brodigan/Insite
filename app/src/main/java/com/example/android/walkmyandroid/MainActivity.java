@@ -18,6 +18,8 @@ package com.example.android.walkmyandroid;
 import android.Manifest;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -32,38 +34,41 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted {
+public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
     private final int REQUEST_LOCATION_PERMISSION = 1;
-    private TextView mLocationTextView;
+//    private TextView mLocationTextView;
     private FusedLocationProviderClient mFusedLocationClient;
     private AnimatorSet mRotateAnim;
-    private ImageView mImageView;
+//    private ImageView mImageView;
     private boolean mTrackingLocation;
     private Button mButton;
     private LocationCallback mLocationCallback;
+    private GoogleMap mMap;
+    private GeofencingClient mGeofencingClient;
+    private Geofence mGeofence;
+    private PendingIntent mGeofencePendingIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //Animation Setup
-        mImageView = findViewById(R.id.imageview_android);
-
-        mRotateAnim = (AnimatorSet) AnimatorInflater.loadAnimator
-                (this, R.animator.rotate);
-
-        mRotateAnim.setTarget(mImageView);
-
-        //Setup more member variables and button's onClickListener
-        mLocationTextView = findViewById(R.id.textview_location);
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -87,9 +92,84 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 if (mTrackingLocation) {
                     new FetchAddressTask(MainActivity.this, MainActivity.this)
                             .execute(locationResult.getLastLocation());
+
+                    Location currentLocation = locationResult.getLastLocation();
+
+                    mMap.clear();
+
+                    LatLng currentLatLong = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                    mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
                 }
             }
         };
+
+        //Google Maps Setup
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.g_map);
+        mapFragment.getMapAsync(this);
+
+        //Geofencing Client
+        mGeofencingClient = LocationServices.getGeofencingClient(this);
+        mGeofence = getGeofence();
+        mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
+                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        // Geofences added
+                        Log.i("Geofences Success", "GEOFENCE SUCCESSFULLY ADDED");
+                    }
+                })
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Failed to add geofences
+                        Log.i("Geofence Failure", "GEOFENCE FAILED TO ADD");
+                    }
+                });
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+    }
+
+    private Geofence getGeofence(){
+        return new Geofence.Builder()
+
+                // Set the request ID of the geofence. This is a string to identify this
+                // geofence.
+                .setRequestId("MahGeofence")
+
+                .setCircularRegion(
+                        53.98174589,
+                        -6.39237732,
+                        100
+                )
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
+                        Geofence.GEOFENCE_TRANSITION_EXIT)
+                .build();
+    }
+
+    private GeofencingRequest getGeofencingRequest() {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.addGeofence(mGeofence);
+        return builder.build();
+    }
+
+    private PendingIntent getGeofencePendingIntent() {
+        // Reuse the PendingIntent if we already have it.
+        if (mGeofencePendingIntent != null) {
+            return mGeofencePendingIntent;
+        }
+        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
+        // calling addGeofences() and removeGeofences().
+        mGeofencePendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.
+                FLAG_UPDATE_CURRENT);
+        return mGeofencePendingIntent;
     }
 
     private void startTrackingLocation(){
@@ -106,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                     (getLocationRequest(), mLocationCallback,
                             null /* Looper */);
 
-            mRotateAnim.start();
+//            mRotateAnim.start();
             mTrackingLocation = true;
             mButton.setText(R.string.stop_tracking_location);
         }
@@ -119,8 +199,8 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
             mTrackingLocation = false;
             mButton.setText(R.string.start_tracking_location);
-            mLocationTextView.setText(R.string.textview_hint);
-            mRotateAnim.end();
+//            mLocationTextView.setText(R.string.textview_hint);
+//            mRotateAnim.end();
         }
     }
 
@@ -154,8 +234,8 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
     @Override
     public void onTaskCompleted(String result) {
         if(mTrackingLocation){
-            mLocationTextView.setText(getString(R.string.address_text,
-                    result, System.currentTimeMillis()));
+//            mLocationTextView.setText(getString(R.string.address_text,
+//                    result, System.currentTimeMillis()));
         }
     }
 }
