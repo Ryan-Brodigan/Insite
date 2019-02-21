@@ -2,83 +2,44 @@ package com.example.android.walkmyandroid;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.content.Context;
+import android.util.Log;
+
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingEvent;
 
 public class GeofenceTransitionsIntentService extends IntentService {
-    // TODO: Rename actions, choose action names that describe tasks that this
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
-    private static final String ACTION_FOO = "com.example.android.walkmyandroid.action.FOO";
-    private static final String ACTION_BAZ = "com.example.android.walkmyandroid.action.BAZ";
 
-    // TODO: Rename parameters
-    private static final String EXTRA_PARAM1 = "com.example.android.walkmyandroid.extra.PARAM1";
-    private static final String EXTRA_PARAM2 = "com.example.android.walkmyandroid.extra.PARAM2";
+    private static String LOGTAG = "GEOFENCEINTENTS";
 
     public GeofenceTransitionsIntentService() {
         super("GeofenceTransitionsIntentService");
     }
 
-    /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionFoo(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, GeofenceTransitionsIntentService.class);
-        intent.setAction(ACTION_FOO);
-        intent.putExtra(EXTRA_PARAM1, param1);
-        intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
-
-    /**
-     * Starts this service to perform action Baz with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionBaz(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, GeofenceTransitionsIntentService.class);
-        intent.setAction(ACTION_BAZ);
-        intent.putExtra(EXTRA_PARAM1, param1);
-        intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
-
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            final String action = intent.getAction();
-            if (ACTION_FOO.equals(action)) {
-                final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                handleActionFoo(param1, param2);
-            } else if (ACTION_BAZ.equals(action)) {
-                final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                handleActionBaz(param1, param2);
-            }
+        GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
+        if (geofencingEvent.hasError()) {
+            String errorMessage = GeofenceErrorMessages.getErrorString(this,
+                    geofencingEvent.getErrorCode());
+            Log.e(LOGTAG, errorMessage);
+            return;
         }
-    }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(String param1, String param2) {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
+        // Get the transition type.
+        int geofenceTransition = geofencingEvent.getGeofenceTransition();
 
-    /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionBaz(String param1, String param2) {
-        // TODO: Handle action Baz
-        throw new UnsupportedOperationException("Not yet implemented");
+        // Test that the reported transition was of interest.
+        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+            // Log the entry transition details.
+            Log.i(LOGTAG, getString(R.string.geofence_user_entry));
+        }
+        else if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
+            // Log the exit transition details
+            Log.i(LOGTAG, getString(R.string.geofence_user_exit));
+        }
+        else {
+            // Log the error.
+            Log.e(LOGTAG, getString(R.string.geofence_transition_invalid_type));
+        }
     }
 }

@@ -14,4 +14,11 @@
     <string name="no_address_found">No address found</string>
     <string name="address_text">"Address: %1$s \n Timestamp: %2$tr"</string>
     <string name="loading">Loading...</string>
+    <string name="geofence_transition_invalid_type">Invalid transition type passed to the Geofence Transition Intent Service: %1</string>
+    <string name="geofence_not_available">Geofence Not Available</string>
+    <string name="geofence_too_many_geofences">Too many geofences</string>
+    <string name="geofence_too_many_pending_intents">Too many pending intents</string>
+    <string name="unknown_geofence_error">Unknown Geofence</string>
+    <string name="geofence_user_entry">USER ENTERED GEOFENCE</string>
+    <string name="geofence_user_exit">USER EXITED GEOFENCE</string>
 </resources>
