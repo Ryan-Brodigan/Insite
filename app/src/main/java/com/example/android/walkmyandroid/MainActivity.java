@@ -21,6 +21,7 @@ import android.animation.AnimatorSet;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -45,6 +46,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -93,13 +96,16 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                     new FetchAddressTask(MainActivity.this, MainActivity.this)
                             .execute(locationResult.getLastLocation());
 
-                    Location currentLocation = locationResult.getLastLocation();
-
                     mMap.clear();
+
+                    drawGeofenceCircleOnMap();
+
+                    Location currentLocation = locationResult.getLastLocation();
 
                     LatLng currentLatLong = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
+                    mMap.animateCamera( CameraUpdateFactory.zoomTo( 16.5f ) );
                 }
             }
         };
@@ -109,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 .findFragmentById(R.id.g_map);
         mapFragment.getMapAsync(this);
 
-        //Geofencing Client
+        //Geofencing Client and drawing Geofence on map
         mGeofencingClient = LocationServices.getGeofencingClient(this);
         mGeofence = getGeofence();
         mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
@@ -132,6 +138,17 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
+        drawGeofenceCircleOnMap();
+    }
+
+    private void drawGeofenceCircleOnMap(){
+        mMap.addCircle(new CircleOptions()
+                .center(new LatLng(53.98174589, -6.39237732))
+                .radius(100)
+                .strokeColor(Color.RED)
+                .fillColor(0x220000FF)
+                .strokeWidth(5));
     }
 
     private Geofence getGeofence(){
