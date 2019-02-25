@@ -37,14 +37,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
     private final int REQUEST_LOCATION_PERMISSION = 1;
-//    private TextView mLocationTextView;
+    //    private TextView mLocationTextView;
     private FusedLocationProviderClient mFusedLocationClient;
     private AnimatorSet mRotateAnim;
-//    private ImageView mImageView;
+    //    private ImageView mImageView;
     private boolean mTrackingLocation;
     private Button mButton;
     private LocationCallback mLocationCallback;
@@ -52,27 +54,38 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
     private GeofencingClient mGeofencingClient;
     private Geofence mGeofence;
     private PendingIntent mGeofencePendingIntent;
+    private DatabaseReference mDatabase;
+    private User currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        //Get Firebase RD reference
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        mButton = findViewById(R.id.button_location);
+        //DUMMY USER
+        currentUser = new User("1", "Ryan");
+        currentUser.setCheckedIn(false);
+
+        //Check-In/Out Button
+        mButton = findViewById(R.id.check_in_out_button);
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!mTrackingLocation){
-                    startTrackingLocation();
+                if(!currentUser.isCheckedIn()){
+                    checkIn();
                 }else{
-                    stopTrackingLocation();
+                    checkOut();
                 }
             }
         });
 
-        // N.B.
+        //FusedLocationProviderClient for getting the User's current location
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        // N.B. When we receive the latest location update
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
@@ -90,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                     LatLng currentLatLong = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
-                    mMap.animateCamera( CameraUpdateFactory.zoomTo( 16.5f ) );
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
                 }
             }
         };
@@ -100,9 +113,16 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 .findFragmentById(R.id.g_map);
         mapFragment.getMapAsync(this);
 
-        //Geofencing Client and drawing Geofence on map
+        //Geofencing Client and adding Geofence on map
         mGeofencingClient = LocationServices.getGeofencingClient(this);
         mGeofence = getGeofence();
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]
+                            {Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_LOCATION_PERMISSION);
+        }
         mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
                 .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                     @Override
@@ -118,6 +138,9 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                         Log.i("Geofence Failure", "GEOFENCE FAILED TO ADD");
                     }
                 });
+
+        //Once we're done setup, start tracking the User's location
+        startTrackingLocation();
     }
 
     @Override
@@ -190,20 +213,31 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
 //            mRotateAnim.start();
             mTrackingLocation = true;
-            mButton.setText(R.string.stop_tracking_location);
         }
     }
 
-    private void stopTrackingLocation(){
-        if (mTrackingLocation) {
+//    private void stopTrackingLocation(){
+//        if (mTrackingLocation) {
+//
+//            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+//
+//            mTrackingLocation = false;
+//            mButton.setText(R.string.start_tracking_location);
+////            mLocationTextView.setText(R.string.textview_hint);
+////            mRotateAnim.end();
+//        }
+//    }
 
-            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+    private void checkIn(){
+        Log.i("CHECKINGIN", "CHECKINGIN");
+        currentUser.setCheckedIn(true);
+        mButton.setText("Check-Out");
+    }
 
-            mTrackingLocation = false;
-            mButton.setText(R.string.start_tracking_location);
-//            mLocationTextView.setText(R.string.textview_hint);
-//            mRotateAnim.end();
-        }
+    private void checkOut(){
+        Log.i("CHECKINGOut", "CHECKINGOut");
+        currentUser.setCheckedIn(false);
+        mButton.setText("Check-In");
     }
 
     private LocationRequest getLocationRequest() {

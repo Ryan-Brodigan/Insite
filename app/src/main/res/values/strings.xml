@@ -21,4 +21,6 @@
     <string name="unknown_geofence_error">Unknown Geofence</string>
     <string name="geofence_user_entry">USER ENTERED GEOFENCE</string>
     <string name="geofence_user_exit">USER EXITED GEOFENCE</string>
+    <string name="check_in">Check-In</string>
+    <string name="check_out">Check-Out</string>
 </resources>
