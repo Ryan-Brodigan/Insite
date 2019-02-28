@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -37,8 +38,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
@@ -51,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
     private FusedLocationProviderClient mFusedLocationClient;
     private Location mCurrentLocation;
     private Button mButton;
+    private TextView mTextView;
     private LocationCallback mLocationCallback;
     private GoogleMap mMap;
     private GeofencingClient mGeofencingClient;
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
         currentUser = new User("1", "Ryan");
         currentUser.setClockedIn(false);
 
-        //Check-In/Out Button
+        //Check-In/Out Button and Address TextView
         mButton = findViewById(R.id.check_in_out_button);
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -83,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 }
             }
         });
+
+        mTextView = findViewById(R.id.textview_location);
 
         //FusedLocationProviderClient for getting the User's current location
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -286,6 +288,6 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
     @Override
     public void onTaskCompleted(String result) {
-
+        mTextView.setText(getString(R.string.address_text, result));
     }
 }

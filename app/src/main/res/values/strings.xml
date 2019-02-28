@@ -12,7 +12,7 @@
     <string name="service_not_available">Service Not Available</string>
     <string name="invalid_lat_long_used">Invalid coordinates were supplied to the Geocoder</string>
     <string name="no_address_found">No address found</string>
-    <string name="address_text">"Address: %1$s \n Timestamp: %2$tr"</string>
+    <string name="address_text">"Current Address: %1$s \n"</string>
     <string name="loading">Loading...</string>
     <string name="geofence_transition_invalid_type">Invalid transition type passed to the Geofence Transition Intent Service: %1</string>
     <string name="geofence_not_available">Geofence Not Available</string>
