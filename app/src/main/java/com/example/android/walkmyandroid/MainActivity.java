@@ -1,7 +1,6 @@
 package com.example.android.walkmyandroid;
 
 import android.Manifest;
-import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -15,8 +14,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -39,15 +36,17 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
+
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
     private final int REQUEST_LOCATION_PERMISSION = 1;
-    //    private TextView mLocationTextView;
     private FusedLocationProviderClient mFusedLocationClient;
     private AnimatorSet mRotateAnim;
-    //    private ImageView mImageView;
     private boolean mTrackingLocation;
+    private Location mCurrentLocation;
     private Button mButton;
     private LocationCallback mLocationCallback;
     private GoogleMap mMap;
@@ -67,17 +66,17 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
         //DUMMY USER
         currentUser = new User("1", "Ryan");
-        currentUser.setCheckedIn(false);
+        currentUser.setClockedIn(false);
 
         //Check-In/Out Button
         mButton = findViewById(R.id.check_in_out_button);
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!currentUser.isCheckedIn()){
-                    checkIn();
+                if(!currentUser.isClockedIn()){
+                    clockIn();
                 }else{
-                    checkOut();
+                    clockOut();
                 }
             }
         });
@@ -98,9 +97,9 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
                     drawGeofenceCircleOnMap();
 
-                    Location currentLocation = locationResult.getLastLocation();
+                    mCurrentLocation = locationResult.getLastLocation();
 
-                    LatLng currentLatLong = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                    LatLng currentLatLong = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
                     mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
@@ -210,34 +209,39 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
             mFusedLocationClient.requestLocationUpdates
                     (getLocationRequest(), mLocationCallback,
                             null /* Looper */);
-
-//            mRotateAnim.start();
             mTrackingLocation = true;
         }
     }
 
-//    private void stopTrackingLocation(){
-//        if (mTrackingLocation) {
-//
-//            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
-//
-//            mTrackingLocation = false;
-//            mButton.setText(R.string.start_tracking_location);
-////            mLocationTextView.setText(R.string.textview_hint);
-////            mRotateAnim.end();
-//        }
-//    }
+    private void clockIn(){
+        if(!currentUser.isClockedIn()){
+            currentUser.setClockedIn(true);
+            mButton.setText(R.string.clock_out);
 
-    private void checkIn(){
-        Log.i("CHECKINGIN", "CHECKINGIN");
-        currentUser.setCheckedIn(true);
-        mButton.setText("Check-Out");
+            registerClockInOut("Clocked-In");
+        }
     }
 
-    private void checkOut(){
-        Log.i("CHECKINGOut", "CHECKINGOut");
-        currentUser.setCheckedIn(false);
-        mButton.setText("Check-In");
+    private void clockOut(){
+        if(currentUser.isClockedIn()){
+            currentUser.setClockedIn(false);
+            mButton.setText(R.string.clock_in);
+
+            registerClockInOut("Clocked-Out");
+        }
+    }
+
+    private void registerClockInOut(String eventType){
+        Event newClockInOutEvent = new Event(ServerValue.TIMESTAMP,
+                currentUser.getUsername(),
+                currentUser.getUserID(),
+                mCurrentLocation.getLatitude(),
+                mCurrentLocation.getLongitude(),
+                eventType);
+
+        Random random = new Random();
+
+        mDatabase.child("Events").child(Integer.toString(newClockInOutEvent.hashCode() + random.nextInt())).setValue(newClockInOutEvent);
     }
 
     private LocationRequest getLocationRequest() {
