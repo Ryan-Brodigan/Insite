@@ -74,6 +74,7 @@ public class Event {
         this.eventType = eventType;
     }
 
+    @SuppressLint("NewApi")
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

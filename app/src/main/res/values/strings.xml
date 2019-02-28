@@ -23,5 +23,7 @@
     <string name="geofence_user_exit">USER EXITED GEOFENCE</string>
     <string name="clock_in">Clock-In</string>
     <string name="clock_out">Clock-Out</string>
-    <string name="clock_in_toast"></string>
+    <string name="clock_in_toast">Clocked-In</string>
+    <string name="clock_out_toast">Clocked-Out</string>
+    <string name="cannot_clock_in_whilst_offsite_toast">You cannot Clock-In whilst offsite!</string>
 </resources>

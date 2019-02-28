@@ -1,7 +1,6 @@
 package com.example.android.walkmyandroid;
 
 import android.Manifest;
-import android.animation.AnimatorSet;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -38,14 +37,18 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
     private final int REQUEST_LOCATION_PERMISSION = 1;
+    private final double CARROLLS_LATITUDE = 53.98174589;
+    private final double CARROLLS_LONGITUDE = -6.39237732;
+    private final float GEOFENCE_RADIUS = 100;
+
     private FusedLocationProviderClient mFusedLocationClient;
-    private AnimatorSet mRotateAnim;
-    private boolean mTrackingLocation;
     private Location mCurrentLocation;
     private Button mButton;
     private LocationCallback mLocationCallback;
@@ -88,22 +91,19 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                // If tracking is turned on, reverse geocode into an address
-                if (mTrackingLocation) {
-                    new FetchAddressTask(MainActivity.this, MainActivity.this)
-                            .execute(locationResult.getLastLocation());
+                new FetchAddressTask(MainActivity.this, MainActivity.this)
+                        .execute(locationResult.getLastLocation());
 
-                    mMap.clear();
+                mMap.clear();
 
-                    drawGeofenceCircleOnMap();
+                drawGeofenceCircleOnMap();
 
-                    mCurrentLocation = locationResult.getLastLocation();
+                mCurrentLocation = locationResult.getLastLocation();
 
-                    LatLng currentLatLong = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-                    mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
-                    mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
-                }
+                LatLng currentLatLong = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+                mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
+                mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
             }
         };
 
@@ -151,8 +151,8 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
     private void drawGeofenceCircleOnMap(){
         mMap.addCircle(new CircleOptions()
-                .center(new LatLng(53.98174589, -6.39237732))
-                .radius(100)
+                .center(new LatLng(CARROLLS_LATITUDE, CARROLLS_LONGITUDE))
+                .radius(GEOFENCE_RADIUS)
                 .strokeColor(Color.RED)
                 .fillColor(0x220000FF)
                 .strokeWidth(5));
@@ -166,9 +166,9 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 .setRequestId("MahGeofence")
 
                 .setCircularRegion(
-                        53.98174589,
-                        -6.39237732,
-                        100
+                        CARROLLS_LATITUDE,
+                        CARROLLS_LONGITUDE,
+                        GEOFENCE_RADIUS
                 )
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
@@ -204,21 +204,23 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                             {Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_LOCATION_PERMISSION);
         }
-        else if(!mTrackingLocation){
-
+        else{
             mFusedLocationClient.requestLocationUpdates
                     (getLocationRequest(), mLocationCallback,
                             null /* Looper */);
-            mTrackingLocation = true;
         }
     }
 
     private void clockIn(){
-        if(!currentUser.isClockedIn()){
+        if(!currentUser.isClockedIn() && userIsWithinGeofence()){
             currentUser.setClockedIn(true);
             mButton.setText(R.string.clock_out);
+            Toast.makeText(this, R.string.clock_in_toast, Toast.LENGTH_LONG).show();
 
             registerClockInOut("Clocked-In");
+        }
+        else{
+            Toast.makeText(this, R.string.cannot_clock_in_whilst_offsite_toast, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -226,6 +228,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
         if(currentUser.isClockedIn()){
             currentUser.setClockedIn(false);
             mButton.setText(R.string.clock_in);
+            Toast.makeText(this, R.string.clock_out_toast, Toast.LENGTH_LONG).show();
 
             registerClockInOut("Clocked-Out");
         }
@@ -242,6 +245,16 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
         Random random = new Random();
 
         mDatabase.child("Events").child(Integer.toString(newClockInOutEvent.hashCode() + random.nextInt())).setValue(newClockInOutEvent);
+    }
+
+    private boolean userIsWithinGeofence(){
+
+        Location geofenceCentrePoint = new Location("");
+        geofenceCentrePoint.setLatitude(CARROLLS_LATITUDE);
+        geofenceCentrePoint.setLongitude(CARROLLS_LONGITUDE);
+
+        return mCurrentLocation.distanceTo(geofenceCentrePoint) <= GEOFENCE_RADIUS;
+
     }
 
     private LocationRequest getLocationRequest() {
@@ -273,9 +286,6 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
     @Override
     public void onTaskCompleted(String result) {
-        if(mTrackingLocation){
-//            mLocationTextView.setText(getString(R.string.address_text,
-//                    result, System.currentTimeMillis()));
-        }
+
     }
 }
