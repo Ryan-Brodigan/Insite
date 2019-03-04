@@ -28,6 +28,8 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.android.gms:play-services-location:16.0.0'
+    implementation 'com.google.android.gms:play-services-maps:16.1.0'
+    implementation 'com.google.firebase:firebase-core:16.0.7'
     //dependency for firebase authentication
     implementation 'com.google.firebase:firebase-auth:16.1.0'
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
@@ -35,5 +37,4 @@ dependencies {
     implementation 'com.android.support:design:27.1.1'
 }
 
-//applying plugin for google-services
 apply plugin: 'com.google.gms.google-services'
