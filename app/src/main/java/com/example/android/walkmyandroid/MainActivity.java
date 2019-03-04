@@ -88,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
         //FusedLocationProviderClient for getting the User's current location
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        
+        mGeofencingClient = null;
 
         // N.B. When we receive the latest location update
         mLocationCallback = new LocationCallback() {
@@ -102,6 +104,34 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
                 mCurrentLocation = locationResult.getLastLocation();
 
+                if(mGeofencingClient == null){
+                    //Geofencing Client and adding Geofence on map
+                    mGeofencingClient = LocationServices.getGeofencingClient(MainActivity.this);
+                    mGeofence = getGeofence();
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]
+                                        {Manifest.permission.ACCESS_FINE_LOCATION},
+                                REQUEST_LOCATION_PERMISSION);
+                    }
+                    mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
+                            .addOnSuccessListener(MainActivity.this, new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    // Geofences added
+                                    Log.i("Geofences Success", "GEOFENCE SUCCESSFULLY ADDED");
+                                }
+                            })
+                            .addOnFailureListener(MainActivity.this, new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    // Failed to add geofences
+                                    Log.i("Geofence Failure", "GEOFENCE FAILED TO ADD");
+                                }
+                            });
+                }
+
                 LatLng currentLatLong = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                 mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
@@ -113,32 +143,6 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.g_map);
         mapFragment.getMapAsync(this);
-
-        //Geofencing Client and adding Geofence on map
-        mGeofencingClient = LocationServices.getGeofencingClient(this);
-        mGeofence = getGeofence();
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]
-                            {Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQUEST_LOCATION_PERMISSION);
-        }
-        mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
-                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // Geofences added
-                        Log.i("Geofences Success", "GEOFENCE SUCCESSFULLY ADDED");
-                    }
-                })
-                .addOnFailureListener(this, new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // Failed to add geofences
-                        Log.i("Geofence Failure", "GEOFENCE FAILED TO ADD");
-                    }
-                });
 
         //Once we're done setup, start tracking the User's location
         startTrackingLocation();
@@ -186,11 +190,13 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        // Reuse the PendingIntent if we already have it.
-        if (mGeofencePendingIntent != null) {
-            return mGeofencePendingIntent;
-        }
         Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
+
+        intent.putExtra("CURRENT_USER_ID", currentUser.getUserID());
+        intent.putExtra("CURRENT_USER_USERNAME", currentUser.getUsername());
+        intent.putExtra("CURRENT_LATITUDE", mCurrentLocation.getLatitude());
+        intent.putExtra("CURRENT_LONGITUDE", mCurrentLocation.getLongitude());
+
         // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
         // calling addGeofences() and removeGeofences().
         mGeofencePendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.
