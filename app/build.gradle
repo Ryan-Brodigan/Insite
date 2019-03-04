@@ -4,7 +4,7 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId "com.example.android.walkmyandroid"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
@@ -30,6 +30,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:16.0.0'
     //dependency for firebase authentication
     implementation 'com.google.firebase:firebase-auth:16.1.0'
+    implementation 'com.google.android.gms:play-services-maps:16.1.0'
+    implementation 'com.google.firebase:firebase-database:16.1.0'
     implementation 'com.android.support:design:27.1.1'
 }
 
