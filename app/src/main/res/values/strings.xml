@@ -23,5 +23,30 @@
     <string name="geofence_user_exit">USER EXITED GEOFENCE</string>
     <string name="clock_in">Clock-In</string>
     <string name="clock_out">Clock-Out</string>
-    <string name="clock_in_toast"></string>
+    <string name="map_activity_lbl">Map Activity</string>
+    <!--Strings for signup and login -->
+    <string name="register_btn">Register</string>
+    <string name="email">Email</string>
+    <string name="minimum_password">Password too short, enter minimum 6 characters!</string>
+    <string name="auth_failed">Authentication failed, check your email and password or sign up</string>
+    <string name="change_password">Change Password</string>
+    <string name="reset_email">Send Password reset email</string>
+    <string name="new_pass">New Password</string>
+    <string name="mainactivity_lbl">Firebase</string>
+    <string name="singupactivity_lbl">Sign in</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="login_btn">LOGIN</string>
+    <string name="signupactivity_btn">Not a member? Get registered in Firebase now!</string>
+    <string name="loginactivity_btn">Already registered. Login Me!</string>
+    <string name="resetactivity_lbl">Reset Password Activity</string>
+    <string name="forgotpassword_btn">Forgot your password?</string>
+    <string name="resetpassword_btn">Reset Password</string>
+    <string name="back_btn"><![CDATA[<< Back]]></string>
+    <string name="change_btn">Change</string>
+    <string name="send_btn">Send</string>
+    <string name="signout_btn">Sign Out</string>
+    <string name="forgotpassword_lbl">Forgot password?</string>
+    <string name="forgot_password_msg">We just need your registered Email Id to sent you password reset instructions.</string>
+    <string name="prompt_password" />
 </resources>
