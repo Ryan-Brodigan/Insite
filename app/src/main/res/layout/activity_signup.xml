@@ -75,10 +75,10 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dip"
-            android:background="@null"
+            android:background="@color/colorAccent"
             android:text="@string/forgotpassword_btn"
             android:textAllCaps="false"
-            android:textColor="@color/colorAccent" />
+            android:textColor="@color/white" />
 
         <!-- Link to Login Screen -->
 
@@ -87,7 +87,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dip"
-            android:background="@null"
+            android:background="@color/colorAccent"
             android:text="@string/loginactivity_btn"
             android:textAllCaps="false"
             android:textColor="@color/white"
