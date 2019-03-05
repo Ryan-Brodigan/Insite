@@ -70,21 +70,36 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private FirebaseAuth auth;
     private FirebaseAuth.AuthStateListener authListener;
 
+    private Button signOut, rstPass;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
 
-
         //Get Firebase RD reference
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
+        //get the firebase authentication instance
         auth = FirebaseAuth.getInstance();
 
+        //get the user session of the current user logged in
+        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        authListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                //user.getEmail();
+                if (user == null) {
+                    //if user session is lost, log them out.
+                    startActivity(new Intent(MapActivity.this, LoginActivity.class));
+                    finish();
+                }
+            }
+        };
         //GET USER CREDS AND UPDATE CURRENT USER
         currentUser = new User(auth.getCurrentUser().getUid(),auth.getCurrentUser().getEmail());
         currentUser.setClockedIn(false);
-        Log.i("This is login", currentUser.getUserID() + " " + currentUser.getUsername());
 
         //Check-In/Out Button
         mButton = findViewById(R.id.check_in_out_button);
@@ -158,6 +173,22 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
 
         //Once we're done setup, start tracking the User's location
         startTrackingLocation();
+
+        signOut = (Button) findViewById(R.id.signout_btn);
+        signOut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signOut();
+            }
+        });
+
+        rstPass = (Button) findViewById(R.id.reset_password);
+        rstPass.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetPass();
+            }
+        });
 
     }
 
@@ -289,6 +320,30 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
                 break;
         }
     }
+
+    public void signOut() {
+        auth.signOut();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        auth.addAuthStateListener(authListener);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (authListener != null) {
+            auth.removeAuthStateListener(authListener);
+        }
+    }
+
+    public void resetPass(){
+        Intent intent = new Intent(MapActivity.this, MainActivity.class);
+        startActivity(intent);
+    }
+
 
     @Override
     public void onTaskCompleted(String result) {
