@@ -70,7 +70,7 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private FirebaseAuth auth;
     private FirebaseAuth.AuthStateListener authListener;
 
-    private Button signOut;
+    private Button signOut, rstPass;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -179,6 +179,14 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
             @Override
             public void onClick(View v) {
                 signOut();
+            }
+        });
+
+        rstPass = (Button) findViewById(R.id.reset_password);
+        rstPass.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetPass();
             }
         });
 
@@ -330,6 +338,12 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
             auth.removeAuthStateListener(authListener);
         }
     }
+
+    public void resetPass(){
+        Intent intent = new Intent(MapActivity.this, MainActivity.class);
+        startActivity(intent);
+    }
+
 
     @Override
     public void onTaskCompleted(String result) {
