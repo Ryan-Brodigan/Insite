@@ -12,7 +12,7 @@
     <string name="service_not_available">Service Not Available</string>
     <string name="invalid_lat_long_used">Invalid coordinates were supplied to the Geocoder</string>
     <string name="no_address_found">No address found</string>
-    <string name="address_text">"Address: %1$s \n Timestamp: %2$tr"</string>
+    <string name="address_text">""Current Address: %1$s \n"</string>
     <string name="loading">Loading...</string>
     <string name="geofence_transition_invalid_type">Invalid transition type passed to the Geofence Transition Intent Service: %1</string>
     <string name="geofence_not_available">Geofence Not Available</string>
@@ -23,6 +23,9 @@
     <string name="geofence_user_exit">USER EXITED GEOFENCE</string>
     <string name="clock_in">Clock-In</string>
     <string name="clock_out">Clock-Out</string>
+    <string name="clock_in_toast">Clocked-In</string>
+    <string name="clock_out_toast">Clocked-Out</string>
+    <string name="cannot_clock_in_whilst_offsite_toast">You cannot Clock-In whilst offsite!</string>
     <string name="map_activity_lbl">Map Activity</string>
     <!--Strings for signup and login -->
     <string name="register_btn">Register</string>

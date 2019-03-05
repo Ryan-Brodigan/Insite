@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -55,13 +56,16 @@ import java.util.Random;
 public class MapActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
     private final int REQUEST_LOCATION_PERMISSION = 1;
+    private final double CARROLLS_LATITUDE = 53.98174589;
+    private final double CARROLLS_LONGITUDE = -6.39237732;
+    private final float GEOFENCE_RADIUS = 100;
+
     private FusedLocationProviderClient mFusedLocationClient;
-    private AnimatorSet mRotateAnim;
-    private boolean mTrackingLocation;
     private Location mCurrentLocation;
     private Button mButton;
     private LocationCallback mLocationCallback;
     private GoogleMap mMap;
+    private TextView mAddressTextView;
     private GeofencingClient mGeofencingClient;
     private Geofence mGeofence;
     private PendingIntent mGeofencePendingIntent;
@@ -114,29 +118,58 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
             }
         });
 
+        mAddressTextView = findViewById(R.id.textview_location);
+
         //FusedLocationProviderClient for getting the User's current location
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        mGeofencingClient = null;
 
         // N.B. When we receive the latest location update
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                // If tracking is turned on, reverse geocode into an address
-                if (mTrackingLocation) {
-                    new FetchAddressTask(MapActivity.this, MapActivity.this)
-                            .execute(locationResult.getLastLocation());
+                new FetchAddressTask(MapActivity.this, MapActivity.this)
+                        .execute(locationResult.getLastLocation());
 
-                    mMap.clear();
+                mMap.clear();
 
-                    drawGeofenceCircleOnMap();
+                drawGeofenceCircleOnMap();
 
-                    mCurrentLocation = locationResult.getLastLocation();
+                mCurrentLocation = locationResult.getLastLocation();
 
-                    LatLng currentLatLong = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-                    mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
-                    mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
+                if(mGeofencingClient == null){
+                    //Geofencing Client and adding Geofence on map
+                    mGeofencingClient = LocationServices.getGeofencingClient(MapActivity.this);
+                    mGeofence = getGeofence();
+                    if (ActivityCompat.checkSelfPermission(MapActivity.this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MapActivity.this, new String[]
+                                        {Manifest.permission.ACCESS_FINE_LOCATION},
+                                REQUEST_LOCATION_PERMISSION);
+                    }
+                    mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
+                            .addOnSuccessListener(MapActivity.this, new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    // Geofences added
+                                    Log.i("Geofences Success", "GEOFENCE SUCCESSFULLY ADDED");
+                                }
+                            })
+                            .addOnFailureListener(MapActivity.this, new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    // Failed to add geofences
+                                    Log.i("Geofence Failure", "GEOFENCE FAILED TO ADD");
+                                }
+                            });
                 }
+
+                LatLng currentLatLong = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+                mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
+                mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
             }
         };
 
@@ -144,32 +177,6 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.g_map);
         mapFragment.getMapAsync(this);
-
-        //Geofencing Client and adding Geofence on map
-        mGeofencingClient = LocationServices.getGeofencingClient(this);
-        mGeofence = getGeofence();
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]
-                            {Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQUEST_LOCATION_PERMISSION);
-        }
-        mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
-                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // Geofences added
-                        Log.i("Geofences Success", "GEOFENCE SUCCESSFULLY ADDED");
-                    }
-                })
-                .addOnFailureListener(this, new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // Failed to add geofences
-                        Log.i("Geofence Failure", "GEOFENCE FAILED TO ADD");
-                    }
-                });
 
         //Once we're done setup, start tracking the User's location
         startTrackingLocation();
@@ -201,8 +208,8 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
 
     private void drawGeofenceCircleOnMap(){
         mMap.addCircle(new CircleOptions()
-                .center(new LatLng(53.98174589, -6.39237732))
-                .radius(100)
+                .center(new LatLng(CARROLLS_LATITUDE, CARROLLS_LONGITUDE))
+                .radius(GEOFENCE_RADIUS)
                 .strokeColor(Color.RED)
                 .fillColor(0x220000FF)
                 .strokeWidth(5));
@@ -216,9 +223,9 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
                 .setRequestId("MahGeofence")
 
                 .setCircularRegion(
-                        53.98174589,
-                        -6.39237732,
-                        100
+                        CARROLLS_LATITUDE,
+                        CARROLLS_LONGITUDE,
+                        GEOFENCE_RADIUS
                 )
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
@@ -234,11 +241,13 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        // Reuse the PendingIntent if we already have it.
-        if (mGeofencePendingIntent != null) {
-            return mGeofencePendingIntent;
-        }
         Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
+
+        intent.putExtra("CURRENT_USER_ID", currentUser.getUserID());
+        intent.putExtra("CURRENT_USER_USERNAME", currentUser.getUsername());
+        intent.putExtra("CURRENT_LATITUDE", mCurrentLocation.getLatitude());
+        intent.putExtra("CURRENT_LONGITUDE", mCurrentLocation.getLongitude());
+
         // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
         // calling addGeofences() and removeGeofences().
         mGeofencePendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.
@@ -254,21 +263,23 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
                             {Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_LOCATION_PERMISSION);
         }
-        else if(!mTrackingLocation){
-
+        else{
             mFusedLocationClient.requestLocationUpdates
                     (getLocationRequest(), mLocationCallback,
                             null /* Looper */);
-            mTrackingLocation = true;
         }
     }
 
     private void clockIn(){
-        if(!currentUser.isClockedIn()){
+        if(!currentUser.isClockedIn() && userIsWithinGeofence()){
             currentUser.setClockedIn(true);
             mButton.setText(R.string.clock_out);
+            Toast.makeText(this, R.string.clock_in_toast, Toast.LENGTH_LONG).show();
 
             registerClockInOut("Clocked-In");
+        }
+        else{
+            Toast.makeText(this, R.string.cannot_clock_in_whilst_offsite_toast, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -276,6 +287,7 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         if(currentUser.isClockedIn()){
             currentUser.setClockedIn(false);
             mButton.setText(R.string.clock_in);
+            Toast.makeText(this, R.string.clock_out_toast, Toast.LENGTH_LONG).show();
 
             registerClockInOut("Clocked-Out");
         }
@@ -300,6 +312,15 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         locationRequest.setFastestInterval(5000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         return locationRequest;
+    }
+
+    private boolean userIsWithinGeofence(){
+
+        Location geofenceCentrePoint = new Location("");
+        geofenceCentrePoint.setLatitude(CARROLLS_LATITUDE);
+        geofenceCentrePoint.setLongitude(CARROLLS_LONGITUDE);
+
+        return mCurrentLocation.distanceTo(geofenceCentrePoint) <= GEOFENCE_RADIUS;
     }
 
     @Override
@@ -344,13 +365,9 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         startActivity(intent);
     }
 
-
     @Override
     public void onTaskCompleted(String result) {
-        if(mTrackingLocation){
-//            mLocationTextView.setText(getString(R.string.address_text,
-//                    result, System.currentTimeMillis()));
-        }
+        mAddressTextView.setText(getString(R.string.address_text, result));
     }
 
 }
