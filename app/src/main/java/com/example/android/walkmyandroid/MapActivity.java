@@ -66,6 +66,7 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private LocationCallback mLocationCallback;
     private GoogleMap mMap;
     private TextView mAddressTextView;
+    private TextView mCurrentUserTextView;
     private GeofencingClient mGeofencingClient;
     private Geofence mGeofence;
     private PendingIntent mGeofencePendingIntent;
@@ -104,6 +105,10 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         //GET USER CREDS AND UPDATE CURRENT USER
         currentUser = new User(auth.getCurrentUser().getUid(),auth.getCurrentUser().getEmail());
         currentUser.setClockedIn(false);
+
+        //Set Text with User's email
+        mCurrentUserTextView = findViewById(R.id.current_user);
+        mCurrentUserTextView.setText(getString(R.string.currentUser, currentUser.getUsername()));
 
         //Check-In/Out Button
         mButton = findViewById(R.id.check_in_out_button);
