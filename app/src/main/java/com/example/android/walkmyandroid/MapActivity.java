@@ -4,11 +4,13 @@ import android.Manifest;
 import android.animation.AnimatorSet;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.wifi.WifiManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -80,6 +82,12 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
+
+        //Setup our Broadcast receiver to listen for changes in the device's connectivity
+        ConnectivityChangeBroadcastReceiver receiver = new ConnectivityChangeBroadcastReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        registerReceiver(receiver, intentFilter);
 
         //Get Firebase RD reference
         mDatabase = FirebaseDatabase.getInstance().getReference();
