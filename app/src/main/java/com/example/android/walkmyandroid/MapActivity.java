@@ -3,14 +3,21 @@ package com.example.android.walkmyandroid;
 import android.Manifest;
 import android.animation.AnimatorSet;
 import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.wifi.WifiManager;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -76,8 +83,30 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private User currentUser;
     private FirebaseAuth auth;
     private FirebaseAuth.AuthStateListener authListener;
-
     private Button signOut, rstPass;
+
+    //Service Setup
+
+    Messenger mDistanceService = null;
+    boolean isBoundToDistanceService;
+
+    //ServiceConnection for Distance Service
+    private ServiceConnection myDistanceServiceConnection =
+            new ServiceConnection() {
+                public void onServiceConnected(
+                        ComponentName className,
+                        IBinder service) {
+                    mDistanceService = new Messenger(service);
+                    isBoundToDistanceService = true;
+                }
+
+                public void onServiceDisconnected(
+                        ComponentName className) {
+                    mDistanceService = null;
+                    isBoundToDistanceService = false;
+                }
+            };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,6 +117,12 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         registerReceiver(receiver, intentFilter);
+
+        //Bind to our Remote Bound Service
+        Intent intent = new Intent(getApplicationContext(),
+                CalculateDistanceToWorksiteCenterRemoteService.class);
+
+        bindService(intent, myDistanceServiceConnection, Context.BIND_AUTO_CREATE);
 
         //Get Firebase RD reference
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -183,6 +218,8 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
                 mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
                 mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
+
+                sendDistanceCalculationMessage();
             }
         };
 
@@ -210,6 +247,25 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
             }
         });
 
+    }
+
+    public void sendDistanceCalculationMessage(){
+
+        if(!isBoundToDistanceService) return;
+
+        Message msg = Message.obtain();
+
+        Bundle bundle = new Bundle();
+        bundle.putDouble("Longitude", mCurrentLocation.getLongitude());
+        bundle.putDouble("Latitude", mCurrentLocation.getLatitude());
+
+        msg.setData(bundle);
+
+        try{
+           mDistanceService.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -382,5 +438,4 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     public void onTaskCompleted(String result) {
         mAddressTextView.setText(getString(R.string.address_text, result));
     }
-
 }
