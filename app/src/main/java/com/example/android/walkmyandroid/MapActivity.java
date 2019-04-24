@@ -3,14 +3,22 @@ package com.example.android.walkmyandroid;
 import android.Manifest;
 import android.animation.AnimatorSet;
 import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.wifi.WifiManager;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -57,6 +65,19 @@ import java.util.Random;
 
 public class MapActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
+    //Handler for sending as the replyTo param of the Message we send to the service for calculating the distance between the User's current location
+    //And the centre of the Carroll's Worksite
+
+    class DistanceCalculationHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+            Bundle data = msg.getData();
+            double distance = data.getDouble("Distance");
+            mDistanceToWorksiteTextView = findViewById(R.id.distance_to_center);
+            mDistanceToWorksiteTextView.setText(getString(R.string.distance_to_site, distance));
+        }
+    }
+
     private final int REQUEST_LOCATION_PERMISSION = 1;
     private final double CARROLLS_LATITUDE = 53.98174589;
     private final double CARROLLS_LONGITUDE = -6.39237732;
@@ -69,6 +90,7 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private GoogleMap mMap;
     private TextView mAddressTextView;
     private TextView mCurrentUserTextView;
+    private TextView mDistanceToWorksiteTextView;
     private GeofencingClient mGeofencingClient;
     private Geofence mGeofence;
     private PendingIntent mGeofencePendingIntent;
@@ -76,8 +98,30 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private User currentUser;
     private FirebaseAuth auth;
     private FirebaseAuth.AuthStateListener authListener;
-
     private Button signOut, rstPass;
+
+    //Service Setup
+
+    Messenger mDistanceService = null;
+    boolean isBoundToDistanceService;
+
+    //ServiceConnection for Distance Service
+    private ServiceConnection myDistanceServiceConnection =
+            new ServiceConnection() {
+                public void onServiceConnected(
+                        ComponentName className,
+                        IBinder service) {
+                    mDistanceService = new Messenger(service);
+                    isBoundToDistanceService = true;
+                }
+
+                public void onServiceDisconnected(
+                        ComponentName className) {
+                    mDistanceService = null;
+                    isBoundToDistanceService = false;
+                }
+            };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,6 +132,12 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         registerReceiver(receiver, intentFilter);
+
+        //Bind to our Remote Bound Service
+        Intent intent = new Intent(getApplicationContext(),
+                CalculateDistanceToWorksiteCenterRemoteService.class);
+
+        bindService(intent, myDistanceServiceConnection, Context.BIND_AUTO_CREATE);
 
         //Get Firebase RD reference
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -183,6 +233,8 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
                 mMap.addMarker(new MarkerOptions().position(currentLatLong).title("currentLocation"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLong));
                 mMap.animateCamera(CameraUpdateFactory.zoomTo(16.5f));
+
+                sendDistanceCalculationMessage();
             }
         };
 
@@ -210,6 +262,28 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
             }
         });
 
+    }
+
+    public void sendDistanceCalculationMessage(){
+
+        if(!isBoundToDistanceService) return;
+
+        Message msg = Message.obtain();
+
+        Bundle bundle = new Bundle();
+        bundle.putDouble("Longitude", mCurrentLocation.getLongitude());
+        bundle.putDouble("Latitude", mCurrentLocation.getLatitude());
+
+        //For the reply
+        msg.replyTo = new Messenger(new DistanceCalculationHandler());
+
+        msg.setData(bundle);
+
+        try{
+           mDistanceService.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -382,5 +456,4 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     public void onTaskCompleted(String result) {
         mAddressTextView.setText(getString(R.string.address_text, result));
     }
-
 }
