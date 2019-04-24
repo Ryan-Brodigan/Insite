@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
 public class CalculateDistanceToWorksiteCenterRemoteService extends Service {
@@ -35,6 +36,20 @@ public class CalculateDistanceToWorksiteCenterRemoteService extends Service {
             userLocation.setLongitude(userLongitude);
 
             float distanceInMeters = userLocation.distanceTo(Carrolls);
+
+            //Send the response back to the MapActiivty Handler
+            Message reply = Message.obtain();
+
+            Bundle bundle = new Bundle();
+            bundle.putDouble("Distance", distanceInMeters);
+
+            reply.setData(bundle);
+
+            try {
+                msg.replyTo.send(reply);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
 
             Log.e("SERVICE YOKE", "DISTANCE IN METERS: " + distanceInMeters);
         }

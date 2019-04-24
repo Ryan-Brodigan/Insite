@@ -14,6 +14,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.wifi.WifiManager;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -64,6 +65,19 @@ import java.util.Random;
 
 public class MapActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
+    //Handler for sending as the replyTo param of the Message we send to the service for calculating the distance between the User's current location
+    //And the centre of the Carroll's Worksite
+
+    class DistanceCalculationHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+            Bundle data = msg.getData();
+            double distance = data.getDouble("Distance");
+            mDistanceToWorksiteTextView = findViewById(R.id.distance_to_center);
+            mDistanceToWorksiteTextView.setText(getString(R.string.distance_to_site, distance));
+        }
+    }
+
     private final int REQUEST_LOCATION_PERMISSION = 1;
     private final double CARROLLS_LATITUDE = 53.98174589;
     private final double CARROLLS_LONGITUDE = -6.39237732;
@@ -76,6 +90,7 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     private GoogleMap mMap;
     private TextView mAddressTextView;
     private TextView mCurrentUserTextView;
+    private TextView mDistanceToWorksiteTextView;
     private GeofencingClient mGeofencingClient;
     private Geofence mGeofence;
     private PendingIntent mGeofencePendingIntent;
@@ -258,6 +273,9 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         Bundle bundle = new Bundle();
         bundle.putDouble("Longitude", mCurrentLocation.getLongitude());
         bundle.putDouble("Latitude", mCurrentLocation.getLatitude());
+
+        //For the reply
+        msg.replyTo = new Messenger(new DistanceCalculationHandler());
 
         msg.setData(bundle);
 

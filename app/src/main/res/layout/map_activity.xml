@@ -22,7 +22,7 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/margin"
+        android:layout_marginStart="@dimen/margin"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="@dimen/margin"
         android:text="@string/clock_in"
@@ -56,7 +56,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="36dp"
         android:layout_marginBottom="16dp"
-        android:text="Sign-Out"
+        android:text="@string/sign_out"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -67,7 +67,7 @@
         android:layout_height="48dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="16dp"
-        android:text="Rst-Pwd"
+        android:text="@string/rst_pwd"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/signout_btn" />
 
@@ -78,10 +78,23 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:text="Current User"
+        android:text="@string/current_user"
         android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
         app:layout_constraintBottom_toTopOf="@+id/reset_password"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/distance_to_center"
+        android:layout_width="153dp"
+        android:layout_height="96dp"
+        android:layout_marginStart="8dp"
+        android:paddingLeft="8dp"
+        android:paddingTop="8dp"
+        android:text="@string/distance_to_site"
+        android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textSize="18dp"
+        app:layout_constraintStart_toEndOf="@+id/textview_location"
+        app:layout_constraintTop_toTopOf="@+id/textview_location" />
 
 </android.support.constraint.ConstraintLayout>
