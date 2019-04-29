@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
-    tools:context="com.example.android.walkmyandroid.MainActivity">
+    tools:context="com.example.android.walkmyandroid.MapActivity">
 
     <fragment
         android:id="@+id/g_map"
@@ -22,9 +22,8 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/margin"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="@dimen/margin"
+        android:layout_marginBottom="16dp"
         android:text="@string/clock_in"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/reset_password"
@@ -54,7 +53,7 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="36dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         android:text="@string/sign_out"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -65,7 +64,7 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="88dp"
         android:layout_height="48dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="76dp"
         android:layout_marginBottom="16dp"
         android:text="@string/rst_pwd"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -96,5 +95,22 @@
         android:textSize="18dp"
         app:layout_constraintStart_toEndOf="@+id/textview_location"
         app:layout_constraintTop_toTopOf="@+id/textview_location" />
+
+    <Button
+        android:id="@+id/get_Date"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="24dp"
+        android:onClick="dispalyDate"
+        android:text="@string/get_date"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="@color/btn_login_bg"
+        app:layout_constraintBottom_toTopOf="@+id/signout_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guide_image_portrait"
+        app:layout_constraintVertical_bias="0.979" />
 
 </android.support.constraint.ConstraintLayout>

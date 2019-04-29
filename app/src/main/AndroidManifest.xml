@@ -60,6 +60,8 @@
             android:name=".MapActivity"
             android:label="@string/map_activity_lbl"
             android:theme="@style/AppTheme.NoActionBar"/>
+        <service android:name=".LocalBoundService"/>
+        <service android:name=".ForegroundService" />
     </application>
 
 </manifest>

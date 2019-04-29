@@ -21,6 +21,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -63,10 +64,13 @@ import com.google.firebase.database.ServerValue;
 
 import java.util.Random;
 
+import java.util.Date;
+
 public class MapActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted, OnMapReadyCallback {
 
     //Handler for sending as the replyTo param of the Message we send to the service for calculating the distance between the User's current location
     //And the centre of the Carroll's Worksite
+
 
     class DistanceCalculationHandler extends Handler{
         @Override
@@ -104,7 +108,6 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
 
     Messenger mDistanceService = null;
     boolean isBoundToDistanceService;
-
     //ServiceConnection for Distance Service
     private ServiceConnection myDistanceServiceConnection =
             new ServiceConnection() {
@@ -122,10 +125,28 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
                 }
             };
 
+    LocalBoundService localService;
+    private boolean isBound = false;
+
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            LocalBoundService.LocalBinder binder = (LocalBoundService.LocalBinder) service;
+            localService = binder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
+
 
         //Setup our Broadcast receiver to listen for changes in the device's connectivity
         ConnectivityChangeBroadcastReceiver receiver = new ConnectivityChangeBroadcastReceiver();
@@ -363,7 +384,17 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
             mButton.setText(R.string.clock_out);
             Toast.makeText(this, R.string.clock_in_toast, Toast.LENGTH_LONG).show();
 
+            mButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent startIntent = new Intent(MapActivity.this,ForegroundService.class);
+                    startIntent.setAction(ForegroundService.START_ACTION);
+                    startService(startIntent);
+                }
+            });
+
             registerClockInOut("Clocked-In");
+
         }
         else{
             Toast.makeText(this, R.string.cannot_clock_in_whilst_offsite_toast, Toast.LENGTH_LONG).show();
@@ -437,6 +468,8 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     public void onStart() {
         super.onStart();
         auth.addAuthStateListener(authListener);
+        Intent intent = new Intent(this, LocalBoundService.class);
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -444,6 +477,18 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
         super.onStop();
         if (authListener != null) {
             auth.removeAuthStateListener(authListener);
+        }
+
+        if (isBound) {
+            unbindService(connection);
+            isBound = false;
+        }
+    }
+
+    public void dispalyDate(View view) {
+        if (isBound) {
+            Date date = localService.getCurrentDate();
+            Toast.makeText(this, String.valueOf(date), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -456,4 +501,6 @@ public class MapActivity extends AppCompatActivity implements FetchAddressTask.O
     public void onTaskCompleted(String result) {
         mAddressTextView.setText(getString(R.string.address_text, result));
     }
+
+
 }

@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Insite</string>
     <string name="start_tracking_location">Start Tracking Location</string>
+    <string name="get_date">Get Date</string>
     <string name="stop_tracking_location">Stop Tracking Location</string>
     <string name="android_image">Android Image</string>
     <string name="textview_hint">Press the button to start tracking your location
@@ -55,4 +56,8 @@
     <string name="rst_pwd">Rst-Pwd</string>
     <string name="sign_out">Sign-Out</string>
     <string name="distance_to_site">%1$.4f meters from center</string>
+    <string name="title">Insite Service</string>
+    <string name="Secondary">You have been logged in</string>
+    <string name="Primary">You have been logged in!</string>
+    <string name="close">Close</string>
 </resources>

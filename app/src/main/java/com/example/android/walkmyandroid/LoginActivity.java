@@ -107,6 +107,10 @@ public class LoginActivity extends AppCompatActivity {
                                 }
                             }
                         });
+
+                Intent startIntent = new Intent(LoginActivity.this,ForegroundService.class);
+                startIntent.setAction(ForegroundService.START_ACTION);
+                startService(startIntent);
             }
         });
     }
